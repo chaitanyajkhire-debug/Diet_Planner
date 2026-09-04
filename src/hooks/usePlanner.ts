@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { generateDayPlanSmart, generateSingleMealSmart } from '@/lib/ai'
-import { loadPreferences, savePlanToHistory, savePreferences } from '@/lib/storage'
+import { loadPreferences, loadPreferencesAsync, savePlanToHistory, savePreferences } from '@/lib/storage'
 import { DEFAULT_PREFERENCES } from '@/types'
 import type { DayPlan, PlannerPreferences, Recipe } from '@/types'
 
@@ -13,6 +13,18 @@ export function usePlanner() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasGenerated, setHasGenerated] = useState(false)
+
+  // On first mount, reconcile with Supabase (when configured) in case this
+  // device's saved preferences differ from what's cached in localStorage.
+  useEffect(() => {
+    let cancelled = false
+    loadPreferencesAsync().then((remote) => {
+      if (!cancelled && remote) setPreferences(remote)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     savePreferences(preferences)
