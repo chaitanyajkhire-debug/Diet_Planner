@@ -37,6 +37,14 @@ function ingredientMatches(userTag: string, line: { name: string; ingredientId?:
   return normalize(line.name).includes(tag) || tag.includes(normalize(line.name))
 }
 
+/** Count of the user's selected ingredients that this template actually uses. */
+function ingredientMatchCount(template: RecipeTemplate, prefs: PlannerPreferences): number {
+  if (prefs.ingredients.length === 0) return 0
+  return prefs.ingredients.filter((tag) => template.ingredients.some((line) => ingredientMatches(tag, line)))
+    .length
+}
+
+/** Tie-breaking score once the ingredient-match tier has already been decided. */
 function scoreTemplate(template: RecipeTemplate, prefs: PlannerPreferences, slot?: MealSlot): number {
   let score = 0
 
@@ -50,11 +58,6 @@ function scoreTemplate(template: RecipeTemplate, prefs: PlannerPreferences, slot
 
   const matchedGoals = template.tags.filter((t) => prefs.goals.includes(t)).length
   score += matchedGoals * 3
-
-  const availableCount = prefs.ingredients.filter((tag) =>
-    template.ingredients.some((line) => ingredientMatches(tag, line)),
-  ).length
-  score += availableCount * 4
 
   // small deterministic jitter so repeated generations vary, based on id hash
   score += (hashString(template.id) % 5) * 0.3
@@ -116,11 +119,40 @@ function templateToRecipe(
   }
 }
 
+/**
+ * Ranks recipe templates for a given slot. Ingredients are optional: with
+ * none selected, results are just the best cuisine/goal/slot match (a
+ * generic suggestion). Once the user selects ingredients, they become a hard
+ * filter — only recipes that actually use at least one selected ingredient
+ * are considered, ranked by how many they use. The slot and diet-type fit
+ * are only relaxed, in order, if nothing in the library matches the
+ * ingredients at all, so the app never comes back empty.
+ */
 function candidatesFor(prefs: PlannerPreferences, slot?: MealSlot): RecipeTemplate[] {
   const dietFiltered = RECIPE_TEMPLATES.filter((t) =>
     prefs.dietType === 'vegetarian' ? t.dietType === 'vegetarian' : true,
   )
-  return [...dietFiltered].sort((a, b) => scoreTemplate(b, prefs, slot) - scoreTemplate(a, prefs, slot))
+
+  const rank = (pool: RecipeTemplate[]) =>
+    [...pool].sort((a, b) => {
+      const matchDiff = ingredientMatchCount(b, prefs) - ingredientMatchCount(a, prefs)
+      if (matchDiff !== 0) return matchDiff
+      return scoreTemplate(b, prefs, slot) - scoreTemplate(a, prefs, slot)
+    })
+
+  if (prefs.ingredients.length === 0) {
+    return rank(dietFiltered)
+  }
+
+  const slotFiltered = slot ? dietFiltered.filter((t) => t.suitableSlots.includes(slot)) : dietFiltered
+  const tiers = [
+    slotFiltered.filter((t) => ingredientMatchCount(t, prefs) > 0), // fits slot AND uses an ingredient
+    dietFiltered.filter((t) => ingredientMatchCount(t, prefs) > 0), // any slot, still uses an ingredient
+    slotFiltered, // no recipe in the whole library uses these ingredients — fall back to a generic pick
+  ]
+
+  const pool = tiers.find((t) => t.length > 0) ?? dietFiltered
+  return rank(pool)
 }
 
 export function generateDayPlan(prefs: PlannerPreferences): DayPlan {

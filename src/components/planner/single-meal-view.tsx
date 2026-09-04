@@ -10,7 +10,7 @@ export function SingleMealView({ recipes, onViewRecipe }: SingleMealViewProps) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        {recipes.length} quick dish ideas based on what you have on hand.
+        {recipes.length} quick dish {recipes.length === 1 ? 'idea' : 'ideas'} based on what you have on hand.
       </p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {recipes.map((recipe) => (
