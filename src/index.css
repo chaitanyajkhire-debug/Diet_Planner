@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 150 20% 98%;
+    --foreground: 170 30% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 170 30% 10%;
+
+    --primary: 173 80% 30%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 160 30% 94%;
+    --secondary-foreground: 170 30% 15%;
+
+    --muted: 160 20% 95%;
+    --muted-foreground: 170 10% 42%;
+
+    --accent: 38 92% 50%;
+    --accent-foreground: 24 40% 12%;
+
+    --amber: 38 92% 50%;
+    --amber-foreground: 24 40% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 160 20% 88%;
+    --input: 160 20% 88%;
+    --ring: 173 80% 30%;
+
+    --radius: 0.9rem;
+  }
+
+  .dark {
+    --background: 174 32% 7%;
+    --foreground: 150 15% 92%;
+
+    --card: 174 26% 10%;
+    --card-foreground: 150 15% 92%;
+
+    --primary: 168 70% 45%;
+    --primary-foreground: 174 40% 8%;
+
+    --secondary: 174 20% 16%;
+    --secondary-foreground: 150 15% 92%;
+
+    --muted: 174 18% 15%;
+    --muted-foreground: 160 10% 65%;
+
+    --accent: 38 92% 55%;
+    --accent-foreground: 24 40% 10%;
+
+    --amber: 38 92% 55%;
+    --amber-foreground: 24 40% 10%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 174 18% 20%;
+    --input: 174 18% 20%;
+    --ring: 168 70% 45%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-muted;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/10;
+    animation: shimmer 1.5s infinite;
+  }
+}
